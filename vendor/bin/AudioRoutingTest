@@ -1,0 +1,111 @@
+#!/system/bin/sh
+#########################################################################
+#   AudioRoutingTest
+#   adb push AudioRoutingTest /data/data
+#   chmod 755 /data/data/AudioRoutingTest
+#########################################################################
+
+#HQ:
+#input: builtin_mic = 1; headset_mic = 2; aux_mic = 3;
+#output:    receiver = 1; headphone = 2; speaker = 3;
+LOOPBACK()
+{
+    if [ "$1" == "2" ]; then # Set audio route
+        if [ "$2" == "0" -a "$3" == "0" ]; then # stop
+            #setprop debug.audiotest.mode 0
+            #setprop debug.audiotest.src 0
+            #setprop debug.audiotest.dst 0
+            #setprop debug.audiotest.start 1
+            echo "stop"
+            /system/bin/sh /vendor/bin/AudioLoopback.sh 0 0 0
+            exit 0
+        elif [ "$2" == "1" -a "$3" == "1" ]; then # Builtin_mic -> Headset
+            src="1"
+            dst="2"
+        elif [ "$2" == "3" -a "$3" == "1" ]; then # Aux_mic -> Headset
+            src="3"
+            dst="2"
+        elif [ "$2" == "2" -a "$3" == "0" ]; then # Headset_Mic -> Speaker
+            src="2"
+            dst="3"
+        elif [ "$2" == "2" -a "$3" == "6" ]; then # Headset_Mic -> Receiver
+            src="2"
+            dst="1"
+        elif [ "$2" == "2" -a "$3" == "5" ]; then # Headset_Mic -> Headset
+            src="2"
+            dst="2"
+        else
+            echo "0"
+            exit 0
+        fi
+    else
+        echo "0"
+        exit 0
+    fi
+
+    #setprop debug.audiotest.mode "$1"
+    #setprop debug.audiotest.src "$src"
+    #setprop debug.audiotest.dst "$dst"
+    #setprop debug.audiotest.start 1
+    echo "start"
+    /system/bin/sh /vendor/bin/AudioLoopback.sh $1 $src $dst
+}
+
+#Usage
+USAGE()
+{
+    echo "Usage: AudioRoutingTest Para1 Para2 Para3"
+    echo -e "\r"
+    echo "It's for audio loopback test."
+    echo -e "\r"
+    echo "Options:"
+    echo "Para1"
+    echo "    command ID: 1"
+    echo "        Set Audio flag!"
+    echo "    command ID: 2"
+    echo "        Set Audio loopback mode"
+    echo "Para2"
+    echo "    0:Stop audio loopback"
+    echo "    1:Builtin_mic."
+    echo "    2:Headset_Mic."
+    echo "    3:Aux_mic."
+    echo "Para3"
+    echo "    0:Speaker."
+    echo "    1:Headset."
+    echo "    6:Receiver."
+    echo "--help"
+    echo "    Show this message."
+    echo -e "\r"
+    echo "Testing continues until Ctrl-C is hit or the time limit is reached."
+}
+
+case $1 in
+    ["1|2"])
+        case $2 in
+            ["0"-"3"])
+                case $3 in
+                    ["0"-"6"])
+                        if [ "$3" -ge "2" -a "$3" -le "4" ]; then
+                            USAGE
+                            exit 1
+                        else
+                            LOOPBACK $1 $2 $3
+                        fi
+                    ;;
+                    *)
+                        USAGE
+                        exit 1
+                    ;;
+                esac
+            ;;
+            *)
+                USAGE
+                exit 1
+            ;;
+        esac
+    ;;
+    *)
+        USAGE
+        exit 1
+    ;;
+esac
